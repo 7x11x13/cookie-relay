@@ -1,0 +1,48 @@
+env:
+  DIRECTORY: distribution
+  PROJECT_NAME: cookie-relay
+name: Release extension
+on:
+  push:
+    paths:
+      - cookie-relay-ext/**
+      - .github/workflows/release-ext.yaml
+jobs:
+  release:
+    outputs:
+      created: ${{ env.DAILY_VERSION_CREATED }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: cookie-relay-ext
+      - name: Change working directory (effectively)
+        run: |
+          find cookie-relay-ext -maxdepth 1 -mindepth 1 -exec mv -t . {} +
+          rm -d cookie-relay-ext
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Test and build
+        run: npm test
+      - name: Create tag if necessary
+        uses: fregante/daily-version-action@v2
+      - name: Update manifest.json with version ${{ env.DAILY_VERSION}}
+        if: env.DAILY_VERSION_CREATED
+        run: npx dot-json@1 "$DIRECTORY/manifest.json" version "$DAILY_VERSION"
+      - name: Ready for "submit" jobs
+        if: env.DAILY_VERSION_CREATED
+        uses: actions/upload-artifact@v3
+        with:
+          path: ${{ env.DIRECTORY }}
+      - name: Create release
+        if: env.DAILY_VERSION_CREATED
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: ${{ env.DIRECTORY }}
+        run: |
+          FILENAME="$PROJECT_NAME-$DAILY_VERSION.zip"
+          zip -r "$FILENAME" ./*
+          gh release create "$DAILY_VERSION" --generate-notes "$FILENAME"
