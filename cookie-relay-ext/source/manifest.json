@@ -1,0 +1,42 @@
+{
+	"manifest_version": 3,
+	"name": "Cookie Relay",
+	"version": "1.0.0",
+	"description": "Send cookies to a remote database",
+	"homepage_url": "https://github.com/7x11x13/cookie-relay",
+	"browser_specific_settings": {
+		"gecko": {
+		"id": "cookie-relay@7x11x13.xyz"
+		}
+	},
+	"icons": {
+		"48": "icons/icon-48.png",
+		"96": "icons/icon-96.png",
+		"128": "icons/icon-128.png"
+	},
+	"action": {
+		"default_icon": "icons/icon-48.png",
+		"default_title": "Cookie Relay Settings",
+		"default_popup": "settings.html"
+	},
+	"permissions": [
+		"cookies",
+		"scripting",
+		"storage"
+	],
+	"host_permissions": [
+		"<all_urls>"
+	],
+	"content_scripts": [
+		{
+			"matches": [ "<all_urls>" ],
+			"js": [ "content.ts" ],
+			"world": "MAIN"
+		}
+	],
+	"background": {
+		"service_worker": "background.ts",
+		"type": "module",
+		"scripts": [ "background.ts" ]
+	}
+}
