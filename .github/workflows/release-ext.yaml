@@ -16,8 +16,17 @@ jobs:
     outputs:
       created: ${{ env.DAILY_VERSION_CREATED }}
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./cookie-relay-ext
     steps:
       - uses: actions/checkout@v4
+        with:
+          sparse-checkout: cookie-relay-ext
+      - name: Change working directory (effectively)
+        run: |
+           mv cookie-relay-ext/{,.}* .
+           rm -d cookie-relay-ext
       - uses: actions/setup-node@v3
         with:
           node-version-file: .nvmrc
