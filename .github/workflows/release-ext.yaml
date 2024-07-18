@@ -22,7 +22,7 @@ jobs:
           sparse-checkout: cookie-relay-ext
       - name: Change working directory (effectively)
         run: |
-           find to_move -maxdepth 1 -mindepth 1 -exec mv -t . {} +
+           find cookie-relay-ext -maxdepth 1 -mindepth 1 -exec mv -t . {} +
            rm -d cookie-relay-ext
       - uses: actions/setup-node@v3
         with:
