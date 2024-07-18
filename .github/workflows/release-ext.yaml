@@ -12,13 +12,10 @@ on:
       - cookie-relay-ext/**
       - .github/workflows/release-ext.yaml
 jobs:
-  Version:
+  release:
     outputs:
       created: ${{ env.DAILY_VERSION_CREATED }}
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./cookie-relay-ext
     steps:
       - uses: actions/checkout@v4
         with:
