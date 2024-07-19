@@ -1,0 +1,45 @@
+name: cookie-relay
+networks:
+  tailscale_proxy:
+    external: false
+
+volumes:
+  tailscale-whoami-state:
+  redis_data:
+
+services:
+  proxy:
+    image: hollie/tailscale-caddy-proxy:latest
+    volumes:
+      - tailscale-whoami-state:/var/lib/tailscale
+    depends_on:
+      - server
+    restart: always
+    init: true
+    environment:
+      - TS_HOSTNAME=cookie-relay
+      - TS_TAILNET=boga-sun
+      - CADDY_TARGET=server:80
+    networks:
+      - tailscale_proxy
+  redis:
+    image: redis:latest
+    restart: always
+    environment:
+      - REDIS_ARGS=--appendonly yes --save 60 1
+    networks:
+      - tailscale_proxy
+    volumes:
+      - redis_data:/data
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - ENV=DEVELOPMENT
+      - REDIS_URL=redis://redis:6379
+      - APIKEY=key
+    depends_on:
+      - redis
+    networks:
+      - tailscale_proxy
