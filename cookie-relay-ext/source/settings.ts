@@ -21,8 +21,9 @@ async function getApiUrl() {
 }
 
 async function getApiKey() {
-	const {cookieRelayApiKey}
+	let {cookieRelayApiKey}
 		= await browser.storage.local.get('cookieRelayApiKey');
+	cookieRelayApiKey ||= 'apikey';
 	return cookieRelayApiKey as string;
 }
 

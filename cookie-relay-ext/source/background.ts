@@ -2,8 +2,8 @@ import {websites} from './const';
 import {type WebsiteIdMessage} from './types';
 import {type CookieWebsite} from './websites';
 
-const currentCookies: Record<string, browser.cookies.Cookie[]> = {}; // "website:user_id -> cookies[]"
-const currentUserId: Record<string, string> = {};
+const currentCookies: Record<string, browser.cookies.Cookie[]> = {}; // "website:userId -> cookies[]"
+const currentUserId: Record<string, string> = {}; // "website -> userId"
 
 async function onMessage(message: WebsiteIdMessage) {
 	console.debug(message);
@@ -18,21 +18,16 @@ async function sendCookies(
 	userId: string,
 	cookies: browser.cookies.Cookie[],
 ) {
-	const url = new URL('/update_cookies', apiUrl);
+	const url = new URL(`/cookies/${website}/${userId}`, apiUrl);
 	await fetch(url, {
 		method: 'POST',
 		headers: {
 			// eslint-disable-next-line @typescript-eslint/naming-convention
 			Accept: 'application/json',
 			'Content-Type': 'application/json',
-			'CR-API-Key': apiKey,
+			'Cookie-Relay-API-Key': apiKey,
 		},
-		body: JSON.stringify({
-			website,
-			userId,
-			timestamp: Date.now() / 1000,
-			cookiesJson: JSON.stringify(cookies),
-		}),
+		body: JSON.stringify(cookies),
 	});
 }
 
