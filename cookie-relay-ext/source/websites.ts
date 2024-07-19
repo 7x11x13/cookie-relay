@@ -38,7 +38,8 @@ export class CookieWebsite {
 	async extractId() {
 		try {
 			return await this._idExtractor();
-		} catch {
+		} catch (error) {
+			console.error(error);
 			return undefined;
 		}
 	}

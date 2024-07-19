@@ -1,3 +1,5 @@
+import browser from 'webextension-polyfill';
+
 class ExtractPageVariable {
 	_variableName: string;
 	_handShake: string;
@@ -58,8 +60,9 @@ class ExtractPageVariable {
 }
 
 export async function getPageVariable(variableName: string) {
-	const {name} = await browser.runtime.getBrowserInfo();
-	if (name === 'Firefox') {
+	const isFirefox = browser.runtime.getURL('').startsWith('moz-extension://');
+	console.debug('isFirefox:', isFirefox);
+	if (isFirefox) {
 		// Firefox
 		return new ExtractPageVariable(variableName).data;
 	}

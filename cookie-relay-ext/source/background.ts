@@ -1,8 +1,11 @@
+import browser from 'webextension-polyfill';
 import {websites} from './const';
 import {type WebsiteIdMessage} from './types';
 import {type CookieWebsite} from './websites';
 
-const currentCookies: Record<string, browser.cookies.Cookie[]> = {}; // "website:userId -> cookies[]"
+type Cookie = browser.Cookies.Cookie;
+
+const currentCookies: Record<string, Cookie[]> = {}; // "website:userId -> cookies[]"
 const currentUserId: Record<string, string> = {}; // "website -> userId"
 
 async function onMessage(message: WebsiteIdMessage) {
@@ -16,7 +19,7 @@ async function sendCookies(
 	apiKey: string,
 	website: string,
 	userId: string,
-	cookies: browser.cookies.Cookie[],
+	cookies: Cookie[],
 ) {
 	const url = new URL(`/cookies/${website}/${userId}`, apiUrl);
 	await fetch(url, {
@@ -32,10 +35,10 @@ async function sendCookies(
 }
 
 function changedCookies(
-	cookies: browser.cookies.Cookie[],
+	cookies: Cookie[],
 	website: CookieWebsite,
 	userId: string,
-): browser.cookies.Cookie[] {
+): Cookie[] {
 	if (userId === undefined) {
 		return [];
 	}
@@ -48,7 +51,7 @@ function changedCookies(
 	}
 
 	const oldCookies = currentCookies[id];
-	const changed: browser.cookies.Cookie[] = [];
+	const changed: Cookie[] = [];
 	for (const key of website.cookieWhitelist) {
 		const oldCookie = oldCookies.find(({name, value, domain}) => name === key);
 		const newCookie = cookies.find(({name, value, domain}) => name === key);
@@ -82,6 +85,7 @@ async function sendCookiesIfChanged() {
 			cookies: await website.getCurrentCookies(),
 		})),
 	);
+	console.debug(cookies);
 	// Only send cookies which have been updated since last send
 	const changed = cookies
 		.map(({service, cookies}) => ({
@@ -89,6 +93,7 @@ async function sendCookiesIfChanged() {
 			cookies: changedCookies(cookies, service, currentUserId[service.name]),
 		}))
 		.filter(({service, cookies}) => cookies.length);
+	console.debug(changed);
 	if (changed.length === 0) {
 		return;
 	}
