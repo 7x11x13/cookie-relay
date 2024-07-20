@@ -30,8 +30,13 @@
 	"content_scripts": [
 		{
 			"matches": [ "<all_urls>" ],
-			"js": [ "content.ts" ],
-			"world": "MAIN"
+			"js": [ "content.ts" ]
+		}
+	],
+	"web_accessible_resources": [
+		{
+			"resources": [ "injected.js" ],
+			"matches": [ "<all_urls>" ]
 		}
 	],
 	"background": {

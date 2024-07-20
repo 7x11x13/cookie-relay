@@ -5,7 +5,6 @@ import {type WebsiteIdMessage} from './types';
 async function init() {
 	// Tell background script which site we are on
 	// and what user ID we are logged in as
-	console.debug('INIT:', typeof globalThis.browser, typeof globalThis.chrome, globalThis);
 	const url = window.location.href;
 	for (const website of websites) {
 		if (website.isWebsiteUrl(url)) {

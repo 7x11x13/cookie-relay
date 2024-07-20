@@ -33,6 +33,9 @@
 		],
 		"rules": {}
 	},
+	"dependencies": {
+		"webextension-polyfill": "^0.12.0"
+	},
 	"devDependencies": {
 		"@parcel/config-webextension": "2.12.1-canary.3310",
 		"@types/webextension-polyfill": "^0.10.7",
@@ -40,7 +43,6 @@
 		"parcel": "2.0.0-canary.1685",
 		"stylelint": "^16.6.1",
 		"stylelint-config-xo": "^1.0.2",
-		"webextension-polyfill": "^0.12.0",
 		"xo": "^0.58.0"
 	},
 	"targets": {

@@ -1,3 +1,5 @@
+import browser from 'webextension-polyfill';
+
 export class CookieWebsite {
 	_name: string;
 	_cookieUrl: string;
