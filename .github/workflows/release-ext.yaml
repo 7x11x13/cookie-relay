@@ -1,10 +1,6 @@
 env:
   DIRECTORY: distribution
   PROJECT_NAME: cookie-relay
-
-# FILE GENERATED WITH: npx ghat fregante/ghatemplates/webext
-# SOURCE: https://github.com/fregante/ghatemplates
-
 name: Release extension
 on:
   push:
