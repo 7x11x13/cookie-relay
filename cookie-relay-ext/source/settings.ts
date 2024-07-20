@@ -1,4 +1,4 @@
-import browser from 'webextension-polyfill';
+import * as browser from 'webextension-polyfill';
 
 const form: HTMLFormElement = document.querySelector('#form')!;
 const urlInput: HTMLInputElement = document.querySelector('#api-url')!;

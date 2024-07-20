@@ -1,4 +1,4 @@
-import browser from 'webextension-polyfill';
+import * as browser from 'webextension-polyfill';
 import {websites} from './const';
 import {type WebsiteIdMessage} from './types';
 import {type CookieWebsite} from './websites';

@@ -1,4 +1,4 @@
-import browser from 'webextension-polyfill';
+import * as browser from 'webextension-polyfill';
 
 class ExtractPageVariable {
 	_variableName: string;

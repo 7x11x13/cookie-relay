@@ -1,4 +1,4 @@
-import browser from 'webextension-polyfill';
+import * as browser from 'webextension-polyfill';
 
 export class CookieWebsite {
 	_name: string;
