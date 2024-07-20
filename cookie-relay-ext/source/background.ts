@@ -22,7 +22,7 @@ async function sendCookies(
 	cookies: Cookie[],
 ) {
 	const url = new URL(`/cookies/${website}/${userId}`, apiUrl);
-	await fetch(url, {
+	const result = await fetch(url, {
 		method: 'POST',
 		headers: {
 			// eslint-disable-next-line @typescript-eslint/naming-convention
@@ -32,6 +32,12 @@ async function sendCookies(
 		},
 		body: JSON.stringify(cookies),
 	});
+	if (result.status === 200) {
+		const id = `${website}:${userId}`;
+		currentCookies[id] = cookies;
+	} else {
+		console.error(result);
+	}
 }
 
 function changedCookies(
@@ -46,7 +52,6 @@ function changedCookies(
 	const id = `${website.name}:${userId}`;
 
 	if (!(id in currentCookies)) {
-		currentCookies[id] = cookies;
 		return cookies;
 	}
 
@@ -71,7 +76,7 @@ async function getApiUrl() {
 }
 
 async function getApiKey() {
-	let {cookieRelayApiKey} = await browser.storage.local.get('cookieRelayAPIKey') as {cookieRelayApiKey: string};
+	let {cookieRelayApiKey} = await browser.storage.local.get('cookieRelayApiKey') as {cookieRelayApiKey: string};
 	cookieRelayApiKey ||= 'apikey';
 
 	return cookieRelayApiKey;
