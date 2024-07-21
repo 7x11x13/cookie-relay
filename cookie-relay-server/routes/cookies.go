@@ -3,6 +3,7 @@ package routes
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/7x11x13/cookie-relay/cookie-relay-server/db"
@@ -10,18 +11,24 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type CookiePartitionKey struct {
+	TopLevelSite string `json:"topLevelSite"`
+}
+
 type Cookie struct {
-	domain           string
-	expirationDate   int64
-	firstPartyDomain string
-	hostOnly         bool
-	httpOnly         bool
-	name             string
-	path             string
-	secure           bool
-	session          bool
-	sameSite         string
-	value            string
+	Domain           string `json:"domain"`
+	ExpirationDate   int64  `json:"expirationDate"`
+	FirstPartyDomain string `json:"firstPartyDomain,omitempty"`
+	HostOnly         bool   `json:"hostOnly"`
+	HttpOnly         bool   `json:"httpOnly"`
+	Name             string `json:"name"`
+	PartitionKey     CookiePartitionKey `json:"partitionKey,omitempty"`
+	Path             string `json:"path"`
+	Secure           bool   `json:"secure"`
+	Session          bool   `json:"session"`
+	SameSite         string `json:"sameSite"`
+	StoreId          string `json:"storeId"`
+	Value            string `json:"value"`
 }
 
 func InitRoutes(r *gin.Engine) {
@@ -50,11 +57,21 @@ func GetCookies(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, cookies)
 }
 
-func SetCookies(ctx *gin.Context) {
+func cookiesFromJSON(jsonData []byte) ([]Cookie, error) {
 	var cookies []Cookie
-	err := ctx.BindJSON(&cookies)
+	err := json.Unmarshal(jsonData, &cookies)
+	return cookies, err
+}
+
+func SetCookies(ctx *gin.Context) {
+	body, err := io.ReadAll(ctx.Request.Body)
 	if err != nil {
-		ctx.AbortWithError(http.StatusBadRequest, err)
+		ctx.AbortWithError(400, err)
+		return
+	}
+	cookies, err := cookiesFromJSON(body)
+	if err != nil {
+		ctx.AbortWithError(400, err)
 		return
 	}
 	json, err := json.Marshal(cookies)
