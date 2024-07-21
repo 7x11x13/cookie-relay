@@ -1,6 +1,7 @@
 # cookie-relay
 
 This is a browser extension and server which I use to store and distribute up-to-date login cookies necessary for some of my projects.
+Currently supports retrieving cookies and user IDs from YouTube, Bandcamp, and SoundCloud.
 
 ## Setup
 
@@ -51,6 +52,7 @@ services:
       - redis_data:/data
   server:
     image: ghcr.io/7x11x13/cookie-relay-server:latest
+    restart: always
     environment:
       - ENV=PRODUCTION
       - REDIS_URL=redis://redis:6379
