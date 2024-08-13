@@ -1,6 +1,7 @@
 import * as browser from 'webextension-polyfill';
 import {websites} from './const';
-import {type WebsiteIdMessage} from './types';
+import {type WebsiteCookieMessage, type WebsiteIdMessage, type Cookie} from './types';
+import {getPageVariable} from './utils';
 
 async function init() {
 	// Tell background script which site we are on
@@ -13,13 +14,33 @@ async function init() {
 			const userId = await website.extractId();
 			console.debug(`USERID: ${userId}`);
 			if (userId) {
-				const message: WebsiteIdMessage = {website: name, userId};
+				const message: WebsiteIdMessage = {type: 'id', website: name, userId};
 				// eslint-disable-next-line no-await-in-loop
 				await browser.runtime.sendMessage(message);
 			}
 
 			return;
 		}
+	}
+
+	// If on youtube studio page, grab session token
+	if (/^https:\/\/studio\.youtube\.com.*$/.test(url)) {
+		const token = await getPageVariable('yt-session-token') as string;
+		const cookie: Cookie = {
+			name: 'SESSION_TOKEN',
+			value: token,
+			domain: '.youtube.com',
+			hostOnly: false,
+			path: '/',
+			secure: true,
+			httpOnly: true,
+			sameSite: 'no_restriction',
+			session: true,
+			storeId: '',
+			firstPartyDomain: '',
+		};
+		const message: WebsiteCookieMessage = {type: 'cookie', website: 'youtube', cookies: [cookie]};
+		await browser.runtime.sendMessage(message);
 	}
 }
 

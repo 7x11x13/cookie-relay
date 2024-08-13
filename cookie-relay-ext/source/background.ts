@@ -1,17 +1,33 @@
 import * as browser from 'webextension-polyfill';
 import {websites} from './const';
-import {type WebsiteIdMessage} from './types';
+import {type WebsiteMessage, type WebsiteIdMessage, type WebsiteCookieMessage} from './types';
 import {type CookieWebsite} from './websites';
 
 type Cookie = browser.Cookies.Cookie;
 
 const currentCookies: Record<string, Cookie[]> = {}; // "website:userId -> cookies[]"
+const extraCookies: Record<string, Cookie[]> = {}; // "website:userId -> cookies[]"
 const currentUserId: Record<string, string> = {}; // "website -> userId"
 
-async function onMessage(message: WebsiteIdMessage) {
-	console.debug(message);
-	const {website, userId} = message;
-	currentUserId[website] = userId;
+async function onMessage(message: WebsiteMessage) {
+	console.debug('MESSAGE:', message);
+	if (message.type === 'id') {
+		const {website, userId} = message as WebsiteIdMessage;
+		currentUserId[website] = userId;
+	} else if (message.type === 'cookie') {
+		const {website, cookies} = message as WebsiteCookieMessage;
+		const service = websites.find(cw => cw.name === website)!;
+		if (!currentUserId[website]) {
+			return;
+		}
+
+		const id = `${website}:${currentUserId[website]}`;
+		extraCookies[id] = cookies;
+
+		if (currentCookies[id]) {
+			await sendNewCookies([{service, cookies: currentCookies[id]}]);
+		}
+	}
 }
 
 async function sendCookies(
@@ -21,6 +37,11 @@ async function sendCookies(
 	userId: string,
 	cookies: Cookie[],
 ) {
+	const id = `${website}:${userId}`;
+	if (id in extraCookies) {
+		cookies = cookies.concat(extraCookies[id]);
+	}
+
 	const url = new URL(`/cookies/${website}/${userId}`, apiUrl);
 	const result = await fetch(url, {
 		method: 'POST',
@@ -33,7 +54,6 @@ async function sendCookies(
 		body: JSON.stringify(cookies),
 	});
 	if (result.status === 200) {
-		const id = `${website}:${userId}`;
 		currentCookies[id] = cookies;
 	} else {
 		console.error(result);
@@ -82,30 +102,13 @@ async function getApiKey() {
 	return cookieRelayApiKey;
 }
 
-async function sendCookiesIfChanged() {
-	// Get current cookies for all websites
-	const cookies = await Promise.all(
-		websites.map(async (website: CookieWebsite) => ({
-			service: website,
-			cookies: await website.getCurrentCookies(),
-		})),
-	);
-	console.debug(cookies);
-	// Only send cookies which have been updated since last send
-	const changed = cookies
-		.map(({service, cookies}) => ({
-			service,
-			cookies: changedCookies(cookies, service, currentUserId[service.name]),
-		}))
-		.filter(({service, cookies}) => cookies.length);
-	console.debug(changed);
-	if (changed.length === 0) {
-		return;
-	}
-
+async function sendNewCookies(newCookies: Array<{
+	service: CookieWebsite;
+	cookies: browser.Cookies.Cookie[];
+}>) {
 	const apiUrl = await getApiUrl();
 	const apiKey = await getApiKey();
-	await Promise.all(changed.map(async ({service, cookies}) => sendCookies(
+	await Promise.all(newCookies.map(async ({service, cookies}) => sendCookies(
 		apiUrl,
 		apiKey,
 		service.name,
@@ -114,6 +117,27 @@ async function sendCookiesIfChanged() {
 	)));
 }
 
+async function sendCookiesIfChanged() {
+	// Get current cookies for all websites
+	const cookies = await Promise.all(
+		websites.map(async (website: CookieWebsite) => ({
+			service: website,
+			cookies: await website.getCurrentCookies(),
+		})),
+	);
+	console.debug(cookies, currentUserId);
+	// Only send cookies which have been updated since last send
+	const changed = cookies
+		.map(({service, cookies}) => ({
+			service,
+			cookies: changedCookies(cookies, service, currentUserId[service.name]),
+		}))
+		.filter(({service, cookies}) => cookies.length);
+	console.debug(changed);
+	await sendNewCookies(changed);
+}
+
 browser.runtime.onMessage.addListener(onMessage);
 browser.cookies.onChanged.addListener(sendCookiesIfChanged);
+
 void sendCookiesIfChanged();
