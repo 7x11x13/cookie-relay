@@ -15,18 +15,19 @@ async function onMessage(message: WebsiteMessage) {
 		const {website, userId} = message as WebsiteIdMessage;
 		currentUserId[website] = userId;
 	} else if (message.type === 'cookie') {
-		const {website, cookies} = message as WebsiteCookieMessage;
+		let {website, cookies, userId} = message as WebsiteCookieMessage;
 		const service = websites.find(cw => cw.name === website)!;
-		if (!currentUserId[website]) {
+
+		userId ||= currentUserId[website];
+
+		if (!userId) {
 			return;
 		}
 
-		const id = `${website}:${currentUserId[website]}`;
+		const id = `${website}:${userId}`;
 		extraCookies[id] = cookies;
 
-		if (currentCookies[id]) {
-			await sendNewCookies([{service, cookies: currentCookies[id]}]);
-		}
+		await sendNewCookies([{service, cookies: currentCookies[id] || []}]);
 	}
 }
 
@@ -76,16 +77,16 @@ function changedCookies(
 	}
 
 	const oldCookies = currentCookies[id];
-	const changed: Cookie[] = [];
 	for (const key of website.cookieWhitelist) {
 		const oldCookie = oldCookies.find(({name, value, domain}) => name === key);
 		const newCookie = cookies.find(({name, value, domain}) => name === key);
 		if ((newCookie && oldCookie?.value !== newCookie.value)) {
-			changed.push(newCookie);
+			// Cookies have changed, return them
+			return cookies;
 		}
 	}
 
-	return changed;
+	return [];
 }
 
 async function getApiUrl() {

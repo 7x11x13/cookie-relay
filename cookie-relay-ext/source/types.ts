@@ -15,4 +15,5 @@ export type Cookie = browser.Cookies.Cookie;
 export type WebsiteCookieMessage = {
 	type: 'cookie';
 	cookies: Cookie[];
+	userId?: string;
 } & WebsiteMessage;

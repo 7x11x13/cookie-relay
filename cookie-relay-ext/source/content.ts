@@ -24,7 +24,8 @@ async function init() {
 	}
 
 	// If on youtube studio page, grab session token
-	if (/^https:\/\/studio\.youtube\.com.*$/.test(url)) {
+	const ytStudioRegex = /^https:\/\/studio\.youtube\.com\/channel\/([^/]+)\/.*$/;
+	if (ytStudioRegex.test(url)) {
 		const token = await getPageVariable('yt-session-token') as string;
 		const cookie: Cookie = {
 			name: 'SESSION_TOKEN',
@@ -39,7 +40,11 @@ async function init() {
 			storeId: '',
 			firstPartyDomain: '',
 		};
-		const message: WebsiteCookieMessage = {type: 'cookie', website: 'youtube', cookies: [cookie]};
+		const userId = ytStudioRegex.exec(url)![1];
+		await browser.runtime.sendMessage({type: 'id', website: 'youtube', userId});
+		const message: WebsiteCookieMessage = {
+			type: 'cookie', website: 'youtube', cookies: [cookie], userId,
+		};
 		await browser.runtime.sendMessage(message);
 	}
 }
