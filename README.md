@@ -13,52 +13,73 @@ Currently supports retrieving cookies and user IDs from YouTube, Bandcamp, and S
 
 ## Example `docker-compose.yaml` for cookie-relay-server using Tailscale
 
-- Replace `<YOUR TAILNET NAME>` with your Tailnet name (see the [docs](https://github.com/hollie/tailscale-caddy-proxy?tab=readme-ov-file#parameters-and-storage)).
+See this guide: https://tailscale.com/blog/docker-tailscale-guide
+
 - Replace `<RANDOM API KEY>` with a random string of characters. This is the API key you will set the browser extension to use.
 
 ```yaml
 name: cookie-relay
-networks:
-  tailscale_proxy:
-    external: false
 
 volumes:
-  tailscale-whoami-state:
+  tailscale-data-proxy:
   redis_data:
 
 services:
-  proxy:
-    image: hollie/tailscale-caddy-proxy:latest
-    volumes:
-      - tailscale-whoami-state:/var/lib/tailscale
-    depends_on:
-      - server
-    restart: always
-    init: true
+  ts-proxy:
+    image: tailscale/tailscale:latest
+    hostname: cookie-relay
     environment:
-      - TS_HOSTNAME=cookie-relay
-      - TS_TAILNET=<YOUR TAILNET NAME>
-      - CADDY_TARGET=server:80
-    networks:
-      - tailscale_proxy
+      - TS_AUTHKEY=tskey-client-secretkeysdfsdfsdfds?ephemeral=false
+      - TS_EXTRA_ARGS=--advertise-tags=tag:container
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/cookie-relay.json
+    volumes:
+      - tailscale-data-proxy:/var/lib/tailscale
+      - ./cookie-relay/config:/config
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    cap_add:
+      - net_admin
+      - sys_module
+    restart: unless-stopped
   redis:
     image: redis/redis-stack:latest
-    restart: always
+    restart: unless-stopped
     environment:
       - REDIS_ARGS=--appendonly yes --save 60 1
-    networks:
-      - tailscale_proxy
     volumes:
       - redis_data:/data
   server:
     image: ghcr.io/7x11x13/cookie-relay-server:latest
-    restart: always
+    restart: unless-stopped
+    network_mode: service:ts-proxy
     environment:
       - ENV=PRODUCTION
       - REDIS_URL=redis://redis:6379
       - APIKEY=<RANDOM API KEY>
     depends_on:
       - redis
-    networks:
-      - tailscale_proxy
+      - ts-proxy
+```
+`cookie-relay.json`:
+```json
+{
+    "TCP": {
+        "443": {
+            "HTTPS": true
+        }
+    },
+    "Web": {
+        "${TS_CERT_DOMAIN}:443": {
+            "Handlers": {
+                "/": {
+                    "Proxy": "http://127.0.0.1:80"
+                }
+            }
+        }
+    },
+    "AllowFunnel": {
+        "${TS_CERT_DOMAIN}:443": false
+    }
+}
 ```
