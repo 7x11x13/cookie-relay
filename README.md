@@ -42,7 +42,7 @@ services:
     networks:
       - tailscale_proxy
   redis:
-    image: redis:latest
+    image: redis/redis-stack:latest
     restart: always
     environment:
       - REDIS_ARGS=--appendonly yes --save 60 1
