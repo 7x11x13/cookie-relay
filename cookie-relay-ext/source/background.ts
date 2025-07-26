@@ -43,12 +43,13 @@ async function sendCookies(
 		cookies = cookies.concat(extraCookies[id]);
 	}
 
-	cookies = cookies.map((cookie) => {
-    if (cookie.expirationDate !== undefined) {
-      cookie.expirationDate = Math.round(cookie.expirationDate);
-    }
-    return cookie;
-  });
+	cookies = cookies.map(cookie => {
+		if (cookie.expirationDate !== undefined) {
+			cookie.expirationDate = Math.round(cookie.expirationDate);
+		}
+
+		return cookie;
+	});
 
 	const url = new URL(`/cookies/${website}/${userId}`, apiUrl);
 	const result = await fetch(url, {
